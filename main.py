@@ -1,22 +1,21 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 app = FastAPI()
 
-items = []
+users = {
+    "admin": "1234",
+    "test": "pass"
+}
 
-class Item(BaseModel):
-    name: str
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
-@app.get("/")
-def root():
-    return {"message": "Hello World"}
 
-@app.get("/items")
-def get_items():
-    return items
-
-@app.post("/items")
-def add_item(item: Item):
-    items.append(item.name)
-    return {"message": "added", "items": items}
+@app.post("/login")
+def login(data: LoginRequest):
+    if data.username in users and users[data.username] == data.password:
+        return {"message": "login success", "user": data.username}
+    
+    raise HTTPException(status_code=401, detail="invalid credentials")
