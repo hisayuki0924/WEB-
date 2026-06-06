@@ -7,8 +7,7 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# 仮のデータ保存場所（メモリ）
-items = []
+#items = []
 
 class Item(BaseModel):
     name: str
