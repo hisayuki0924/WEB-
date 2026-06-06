@@ -1,8 +1,5 @@
 WEB-
-├── main.py
-├── requirements.txt
-└── public/
-    └── index.html
+　└── index.html
 from fastapi import FastAPI
 from pydantic import BaseModel
 
