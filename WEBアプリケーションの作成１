@@ -1,13 +1,14 @@
-├── package.json
-├── server.js
-├── public/
-│   └── index.html
+WEB-
+├── main.py
+├── requirements.txt
+└── public/
+    └── index.html
 from fastapi import FastAPI
 from pydantic import BaseModel
 
 app = FastAPI()
 
-#items = []
+items = []
 
 class Item(BaseModel):
     name: str
