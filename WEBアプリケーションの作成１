@@ -1,7 +1,3 @@
-myapp/
- ├── main.py
- ├── requirements.txt
- └── README.md
 from fastapi import FastAPI
 from pydantic import BaseModel
 
