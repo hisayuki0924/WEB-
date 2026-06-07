@@ -4,16 +4,10 @@ import uuid
 
 app = FastAPI()
 
-# 仮データ
 users = {}
 sessions = {}
 notes = []
 note_id_counter = 1
-
-
-# ------------------
-# リクエストモデル
-# ------------------
 
 class RegisterRequest(BaseModel):
     username: str
@@ -28,10 +22,6 @@ class LoginRequest(BaseModel):
 class NoteRequest(BaseModel):
     content: str
 
-
-# ------------------
-# ユーザー登録
-# ------------------
 @app.post("/register")
 def register(data: RegisterRequest):
     if data.username in users:
@@ -40,10 +30,6 @@ def register(data: RegisterRequest):
     users[data.username] = data.password
     return {"message": "user created", "user": data.username}
 
-
-# ------------------
-# ログイン
-# ------------------
 @app.post("/login")
 def login(data: LoginRequest):
     if data.username in users and users[data.username] == data.password:
@@ -64,10 +50,6 @@ def me(authorization: str = Header(None)):
 
     raise HTTPException(status_code=401, detail="not logged in")
 
-
-# ------------------
-# ログアウト
-# ------------------
 @app.post("/logout")
 def logout(authorization: str = Header(None)):
     if authorization in sessions:
@@ -76,10 +58,6 @@ def logout(authorization: str = Header(None)):
 
     raise HTTPException(status_code=401, detail="not logged in")
 
-
-# ------------------
-# メモ作成
-# ------------------
 @app.post("/notes")
 def create_note(data: NoteRequest, authorization: str = Header(None)):
     global note_id_counter
@@ -98,18 +76,10 @@ def create_note(data: NoteRequest, authorization: str = Header(None)):
 
     return {"message": "note created", "note": note}
 
-
-# ------------------
-# メモ一覧
-# ------------------
 @app.get("/notes")
 def get_notes():
     return notes
 
-
-# ------------------
-# メモ更新
-# ------------------
 @app.put("/notes/{note_id}")
 def update_note(note_id: int, data: NoteRequest, authorization: str = Header(None)):
     if authorization not in sessions:
@@ -125,10 +95,6 @@ def update_note(note_id: int, data: NoteRequest, authorization: str = Header(Non
 
     raise HTTPException(status_code=404, detail="note not found")
 
-
-# ------------------
-# メモ削除
-# ------------------
 @app.delete("/notes/{note_id}")
 def delete_note(note_id: int, authorization: str = Header(None)):
     if authorization not in sessions:
@@ -144,10 +110,6 @@ def delete_note(note_id: int, authorization: str = Header(None)):
 
     raise HTTPException(status_code=404, detail="note not found")
 
-
-# ------------------
-# ルート
-# ------------------
 @app.get("/")
 def root():
     return {"message": "auth + notes system running"}
