@@ -1,27 +1,42 @@
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 
 app = FastAPI()
 
-count = 0
+notes = []
+note_id = 1
 
-@app.get("/", response_class=HTMLResponse)
+
+class Note(BaseModel):
+    content: str
+
+
+@app.get("/")
 def home():
-    return f"""
-    <html>
-        <body style="text-align:center;font-family:sans-serif;margin-top:100px;">
-            <h1>My Website</h1>
-            <h2>Count: {count}</h2>
-
-            <form action="/add" method="post">
-                <button style="font-size:20px;">+1</button>
-            </form>
-        </body>
-    </html>
+    html = "<h1>My Notes</h1><ul>"
+    for n in notes:
+        html += f"<li>{n['id']}: {n['content']}</li>"
+    html += """
+    </ul>
+    <form action="/add" method="post">
+        <input name="content" />
+        <button type="submit">Add</button>
+    </form>
     """
+    return html
+
 
 @app.post("/add")
-def add():
-    global count
-    count += 1
-    return {"count": count}
+def add(note: Note):
+    global note_id
+    n = {"id": note_id, "content": note.content}
+    notes.append(n)
+    note_id += 1
+    return {"ok": True, "note": n}
+
+
+@app.delete("/delete/{id}")
+def delete(id: int):
+    global notes
+    notes = [n for n in notes if n["id"] != id]
+    return {"ok": True}
