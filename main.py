@@ -1,25 +1,18 @@
-const express = require("express");
-const app = express();
+from fastapi import FastAPI
 
-let count = 0;
+app = FastAPI()
 
-app.get("/", (req, res) => {
-  res.send(`
-    <html>
-      <body style="font-family: sans-serif; text-align: center; margin-top: 100px;">
-        <h1>Simple Site</h1>
-        <p>Count: ${count}</p>
-        <form method="POST" action="/add">
-          <button style="font-size:20px;">+1</button>
-        </form>
-      </body>
-    </html>
-  `);
-});
+count = 0
 
-app.post("/add", (req, res) => {
-  count++;
-  res.redirect("/");
-});
+@app.get("/")
+def home():
+    return {
+        "message": "Python FastAPI running",
+        "count": count
+    }
 
-app.listen(3000);
+@app.post("/add")
+def add():
+    global count
+    count += 1
+    return {"count": count}
