@@ -50,10 +50,6 @@ def logout(authorization: str = Header(None)):
 
     raise HTTPException(status_code=401, detail="not logged in")
 
-
-# ----------------------
-# テスト用トップ
-# ----------------------
 @app.get("/")
 def root():
     return {"message": "auth system running"}
