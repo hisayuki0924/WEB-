@@ -7,109 +7,86 @@ app = FastAPI()
 users = {}
 sessions = {}
 notes = []
-note_id_counter = 1
+note_id = 1
 
-class RegisterRequest(BaseModel):
+
+class Auth(BaseModel):
     username: str
     password: str
 
 
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-
-
-class NoteRequest(BaseModel):
+class Note(BaseModel):
     content: str
 
-@app.post("/register")
-def register(data: RegisterRequest):
-    if data.username in users:
-        raise HTTPException(status_code=400, detail="user already exists")
 
+def get_user(token: str):
+    if token not in sessions:
+        raise HTTPException(401, "not logged in")
+    return sessions[token]
+
+
+@app.post("/register")
+def register(data: Auth):
+    if data.username in users:
+        raise HTTPException(400, "exists")
     users[data.username] = data.password
-    return {"message": "user created", "user": data.username}
+    return {"ok": True}
+
 
 @app.post("/login")
-def login(data: LoginRequest):
-    if data.username in users and users[data.username] == data.password:
-        token = str(uuid.uuid4())
-        sessions[token] = data.username
-        return {"message": "login success", "token": token}
+def login(data: Auth):
+    if users.get(data.username) != data.password:
+        raise HTTPException(401, "bad credentials")
+    token = str(uuid.uuid4())
+    sessions[token] = data.username
+    return {"token": token}
 
-    raise HTTPException(status_code=401, detail="invalid credentials")
 
-
-# ------------------
-# 自分の情報
-# ------------------
 @app.get("/me")
 def me(authorization: str = Header(None)):
-    if authorization in sessions:
-        return {"user": sessions[authorization]}
+    return {"user": get_user(authorization)}
 
-    raise HTTPException(status_code=401, detail="not logged in")
-
-@app.post("/logout")
-def logout(authorization: str = Header(None)):
-    if authorization in sessions:
-        del sessions[authorization]
-        return {"message": "logged out"}
-
-    raise HTTPException(status_code=401, detail="not logged in")
 
 @app.post("/notes")
-def create_note(data: NoteRequest, authorization: str = Header(None)):
-    global note_id_counter
+def create(note: Note, authorization: str = Header(None)):
+    global note_id
+    user = get_user(authorization)
 
-    if authorization not in sessions:
-        raise HTTPException(status_code=401, detail="not logged in")
+    n = {"id": note_id, "user": user, "content": note.content}
+    notes.append(n)
+    note_id += 1
+    return n
 
-    note = {
-        "id": note_id_counter,
-        "user": sessions[authorization],
-        "content": data.content
-    }
-
-    notes.append(note)
-    note_id_counter += 1
-
-    return {"message": "note created", "note": note}
 
 @app.get("/notes")
-def get_notes():
-    return notes
+def get_my_notes(authorization: str = Header(None)):
+    user = get_user(authorization)
+    return [n for n in notes if n["user"] == user]
+
 
 @app.put("/notes/{note_id}")
-def update_note(note_id: int, data: NoteRequest, authorization: str = Header(None)):
-    if authorization not in sessions:
-        raise HTTPException(status_code=401, detail="not logged in")
+def update(note_id: int, data: Note, authorization: str = Header(None)):
+    user = get_user(authorization)
 
-    for note in notes:
-        if note["id"] == note_id:
-            if note["user"] != sessions[authorization]:
-                raise HTTPException(status_code=403, detail="not your note")
+    for n in notes:
+        if n["id"] == note_id:
+            if n["user"] != user:
+                raise HTTPException(403, "not yours")
+            n["content"] = data.content
+            return n
 
-            note["content"] = data.content
-            return {"message": "updated", "note": note}
+    raise HTTPException(404, "not found")
 
-    raise HTTPException(status_code=404, detail="note not found")
 
 @app.delete("/notes/{note_id}")
-def delete_note(note_id: int, authorization: str = Header(None)):
-    if authorization not in sessions:
-        raise HTTPException(status_code=401, detail="not logged in")
+def delete(note_id: int, authorization: str = Header(None)):
+    user = get_user(authorization)
 
-    for note in notes:
-        if note["id"] == note_id:
-            if note["user"] != sessions[authorization]:
-                raise HTTPException(status_code=403, detail="not your note")
+    for n in notes:
+        if n["id"] == note_id:
+            if n["user"] != user:
+                raise HTTPException(403, "not yours")
+            notes.remove(n)
+            return {"ok": True}
 
-            notes.remove(note)
-            return {"message": "deleted"}
-
-    raise HTTPException(status_code=404, detail="note not found")
-
-@app.get("/")
-def root():
-    return {"message": "auth + notes system running"}
+    raise HTTPException(404, "not found")
